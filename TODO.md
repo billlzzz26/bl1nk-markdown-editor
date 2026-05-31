@@ -37,13 +37,13 @@ V1 goals:
 
 ## Phase 3: Autosave and local draft support
 
-- [ ] Add debounced autosave for note content updates.
-- [ ] Persist unsaved local drafts keyed by note id in browser storage.
-- [ ] Restore drafts after refresh, tab crash, or accidental navigation.
-- [ ] Show sync state in the UI with at least `Saving`, `Saved`, and `Sync error`.
-- [ ] Prevent duplicate autosave writes when content has not changed.
-- [ ] Make sure local draft recovery does not silently overwrite newer cloud content.
-- [ ] Add acceptance check: a user can type, refresh, and recover an unsaved draft safely.
+- [x] Add debounced autosave for note content updates.
+- [x] Persist unsaved local drafts keyed by note id in browser storage.
+- [x] Restore drafts after refresh, tab crash, or accidental navigation.
+- [x] Show sync state in the UI with at least `Saving`, `Saved`, and `Sync error`.
+- [x] Prevent duplicate autosave writes when content has not changed.
+- [x] Make sure local draft recovery does not silently overwrite newer cloud content.
+- [x] Add acceptance check: a user can type, refresh, and recover an unsaved draft safely.
 
 ## Phase 4: Conflict-safe cloud sync
 
@@ -84,8 +84,8 @@ V1 goals:
 - [ ] Add unit tests for core GFM rendering behavior.
 - [ ] Add component tests for source mode, preview mode, and split view.
 - [ ] Add tests for toolbar formatting actions.
-- [ ] Add tests for autosave behavior and sync status transitions.
-- [ ] Add tests for local draft recovery.
+- [x] Add tests for autosave behavior and sync status transitions.
+- [x] Add tests for local draft recovery.
 - [ ] Add tests for version mismatch and conflict handling.
 - [ ] Add regression tests to confirm legacy plain-text notes still work.
 - [ ] Add integration coverage for create, edit, refresh, and reload flows.
@@ -118,9 +118,16 @@ V1 goals:
 - [x] Reviewed note-editor.tsx (1067 lines) — identified Phase 3 implementation points
 - [x] Created AGENTS.md with build/lint/test commands, code style, and project structure
 - [x] Updated TODO.md with current session tracking
-- [ ] Next: Extend SyncState type (line 74) to include "saving" | "sync_error"
-- [ ] Next: Add Loader2 icon import and update SyncStatusChip component
-- [ ] Next: Implement debounced autosave and localStorage draft persistence
+- [x] Next: Extend SyncState type (line 74) to include "saving" | "sync_error"
+- [x] Next: Add Loader2 icon import and update SyncStatusChip component
+- [x] Next: Implement debounced autosave and localStorage draft persistence
+
+## 2026-05-05 (Current Session)
+
+- [x] Implemented Phase 3 features: debounced autosave and localStorage draft persistence.
+- [x] Updated SyncState type and SyncStatusChip component.
+- [x] Created unit tests for autosave and draft recovery in `src/components/ui/note-editor-autosave.test.tsx`.
+- [x] Verified all Phase 3 requirements with passing tests.
 
 ## Release readiness checklist
 

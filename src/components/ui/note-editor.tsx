@@ -26,6 +26,7 @@ import {
   Bold,
   Check,
   CheckCheck,
+  CloudOff,
   Code2,
   Eye,
   Heading1,
@@ -36,6 +37,7 @@ import {
   List,
   ListChecks,
   ListOrdered,
+  Loader2,
   PanelRight,
   PencilLine,
   Plus,
@@ -48,6 +50,7 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
+import { MonacoEditor } from "./monaco-editor";
 
 export interface Note {
   _id: string;
@@ -71,7 +74,7 @@ interface NoteEditorProps {
 }
 
 type EditorMode = "write" | "preview" | "split";
-type SyncState = "saved" | "draft";
+type SyncState = "saved" | "draft" | "saving" | "sync_error";
 
 const AVAILABLE_TAGS = [
   "Work",
@@ -336,21 +339,35 @@ function formatDate(timestamp: number) {
 }
 
 function SyncStatusChip({ state }: { state: SyncState }) {
-  const config =
-    state === "draft"
-      ? {
-          icon: PencilLine,
-          label: "Unsaved draft",
-          className:
-            "border-[color:var(--aurora-yellow)]/35 bg-[color:var(--aurora-yellow)]/10 text-[color:var(--aurora-yellow)]",
-        }
-      : {
-          icon: CheckCheck,
-          label: "Saved",
-          className:
-            "border-[color:var(--aurora-lime)]/30 bg-[color:var(--aurora-lime)]/10 text-[color:var(--aurora-lime)]",
-        };
+  const configs: Record<SyncState, { icon: any; label: string; className: string; animate?: boolean }> = {
+    draft: {
+      icon: PencilLine,
+      label: "Unsaved draft",
+      className:
+        "border-[color:var(--aurora-yellow)]/35 bg-[color:var(--aurora-yellow)]/10 text-[color:var(--aurora-yellow)]",
+    },
+    saved: {
+      icon: CheckCheck,
+      label: "Saved",
+      className:
+        "border-[color:var(--aurora-lime)]/30 bg-[color:var(--aurora-lime)]/10 text-[color:var(--aurora-lime)]",
+    },
+    saving: {
+      icon: Loader2,
+      label: "Saving...",
+      className:
+        "border-[color:var(--accent-teal)]/30 bg-[color:var(--accent-teal)]/10 text-[color:var(--accent-teal)]",
+      animate: true,
+    },
+    sync_error: {
+      icon: CloudOff,
+      label: "Sync error",
+      className:
+        "border-[color:var(--aurora-red)]/35 bg-[color:var(--aurora-red)]/10 text-[color:var(--aurora-red)]",
+    },
+  };
 
+  const config = configs[state];
   const Icon = config.icon;
 
   return (
@@ -360,7 +377,7 @@ function SyncStatusChip({ state }: { state: SyncState }) {
         config.className
       )}
     >
-      <Icon className="size-3.5" />
+      <Icon className={cn("size-3.5", config.animate && "animate-spin")} />
       <span>{config.label}</span>
     </div>
   );
@@ -414,39 +431,130 @@ export function NoteEditorDialog({
   isOpen,
   onOpenChange,
 }: NoteEditorProps) {
-  const [title, setTitle] = React.useState(note?.title || "");
-  const [content, setContent] = React.useState(note?.content || "");
-  const [tags, setTags] = React.useState<string[]>(note?.tags || []);
+  const [title, setTitle] = React.useState("");
+  const [content, setContent] = React.useState("");
+  const [tags, setTags] = React.useState<string[]>([]);
+  const [syncStatus, setSyncStatus] = React.useState<SyncState>("saved");
   const [newTag, setNewTag] = React.useState("");
   const [showTagInput, setShowTagInput] = React.useState(false);
   const [editorMode, setEditorMode] = React.useState<EditorMode>("split");
+  const [advancedEditor, setAdvancedEditor] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const monacoRef = React.useRef<any>(null);
 
+  // Load note or draft when dialog opens
   React.useEffect(() => {
-    if (note) {
-      setTitle(note.title);
-      setContent(note.content);
-      setTags(note.tags);
-    } else {
-      setTitle("");
-      setContent("");
-      setTags([]);
+    if (isOpen) {
+      const draftKey = `note-draft-${note?._id || "new"}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      
+      if (savedDraft) {
+        try {
+          const { title: dTitle, content: dContent, tags: dTags } = JSON.parse(savedDraft);
+          setTitle(dTitle);
+          setContent(dContent);
+          setTags(dTags);
+        } catch (e) {
+          console.error("Failed to parse draft", e);
+          if (note) {
+            setTitle(note.title);
+            setContent(note.content);
+            setTags(note.tags);
+          }
+        }
+      } else if (note) {
+        setTitle(note.title);
+        setContent(note.content);
+        setTags(note.tags);
+      } else {
+        setTitle("");
+        setContent("");
+        setTags([]);
+      }
+      setEditorMode("split");
+      setShowTagInput(false);
+      setNewTag("");
+      setSyncStatus("saved");
     }
-    setEditorMode("split");
-    setShowTagInput(false);
-    setNewTag("");
   }, [note, isOpen]);
 
+  // Debounced autosave and draft persistence
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const hasChanges =
+      title !== (note?.title || "") ||
+      content !== (note?.content || "") ||
+      JSON.stringify(tags) !== JSON.stringify(note?.tags || []);
+
+    if (hasChanges) {
+      setSyncStatus("draft");
+      
+      const draftKey = `note-draft-${note?._id || "new"}`;
+      localStorage.setItem(draftKey, JSON.stringify({ title, content, tags }));
+
+      const timer = setTimeout(async () => {
+        if (!title.trim()) return;
+        
+        setSyncStatus("saving");
+        try {
+          await onSave({
+            _id: note?._id,
+            title: title.trim(),
+            content: content.trim(),
+            tags,
+            updatedAt: Date.now(),
+          });
+          setSyncStatus("saved");
+          // We don't remove the draft immediately to avoid flickering if the user
+          // continues typing, but the current state is now "saved" relative to the server.
+          // However, the draft on disk is now identical to the server.
+        } catch (error) {
+          console.error("Autosave failed:", error);
+          setSyncStatus("sync_error");
+        }
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    } else {
+      setSyncStatus("saved");
+      // If there are no changes, we can safely remove the draft
+      const draftKey = `note-draft-${note?._id || "new"}`;
+      localStorage.removeItem(draftKey);
+    }
+  }, [title, content, tags, note?._id, note?.title, note?.content, note?.tags, onSave, isOpen]);
+
   const isEditing = !!note;
-  const hasChanges =
-    title !== (note?.title || "") ||
-    content !== (note?.content || "") ||
-    JSON.stringify(tags) !== JSON.stringify(note?.tags || []);
-  const syncState: SyncState = hasChanges ? "draft" : "saved";
   const noteFeatures = React.useMemo(() => detectNoteFeatures(content), [content]);
 
   const applyToSelection = React.useCallback(
     (prefix: string, suffix = prefix, placeholder = "text") => {
+      if (advancedEditor && monacoRef.current) {
+        const editor = monacoRef.current;
+        const selection = editor.getSelection();
+        const model = editor.getModel();
+        const selectedText = model.getValueInRange(selection);
+        const text = selectedText || placeholder;
+        
+        editor.executeEdits("toolbar", [{
+          range: selection,
+          text: prefix + text + suffix,
+          forceMoveMarkers: true,
+        }]);
+        
+        if (!selectedText) {
+          const newStart = selection.startColumn + prefix.length;
+          editor.setSelection({
+            startLineNumber: selection.startLineNumber,
+            startColumn: newStart,
+            endLineNumber: selection.endLineNumber,
+            endColumn: newStart + text.length
+          });
+        }
+        editor.focus();
+        return;
+      }
+
       const textarea = textareaRef.current;
       const { start, end, selected } = getSelectionRange(textarea, content);
       const value = selected || placeholder;
@@ -462,11 +570,28 @@ export function NoteEditorDialog({
         textarea.setSelectionRange(selectionStart, selectionEnd);
       });
     },
-    [content]
+    [content, advancedEditor]
   );
 
   const applyLinePrefix = React.useCallback(
     (prefix: string) => {
+      if (advancedEditor && monacoRef.current) {
+        const editor = monacoRef.current;
+        const selection = editor.getSelection();
+        const model = editor.getModel();
+        
+        const edits: any[] = [];
+        for (let i = selection.startLineNumber; i <= selection.endLineNumber; i++) {
+          edits.push({
+            range: { startLineNumber: i, startColumn: 1, endLineNumber: i, endColumn: 1 },
+            text: prefix,
+          });
+        }
+        editor.executeEdits("toolbar", edits);
+        editor.focus();
+        return;
+      }
+
       const textarea = textareaRef.current;
       const { start, end } = getSelectionRange(textarea, content);
       const blockStart = content.lastIndexOf("\n", start - 1) + 1;
@@ -482,17 +607,29 @@ export function NoteEditorDialog({
       setContent(nextContent);
       requestAnimationFrame(() => textarea?.focus());
     },
-    [content]
+    [content, advancedEditor]
   );
 
   const insertTable = React.useCallback(() => {
     const table = "\n| Column | Column |\n| --- | --- |\n| Value | Value |\n";
+    if (advancedEditor && monacoRef.current) {
+      const editor = monacoRef.current;
+      const selection = editor.getSelection();
+      editor.executeEdits("toolbar", [{
+        range: selection,
+        text: table,
+        forceMoveMarkers: true,
+      }]);
+      editor.focus();
+      return;
+    }
+
     const textarea = textareaRef.current;
     const { start, end } = getSelectionRange(textarea, content);
     const nextContent = content.slice(0, start) + table + content.slice(end);
     setContent(nextContent);
     requestAnimationFrame(() => textarea?.focus());
-  }, [content]);
+  }, [content, advancedEditor]);
 
   const handleSave = () => {
     if (!title.trim()) return;
@@ -561,10 +698,10 @@ export function NoteEditorDialog({
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <SyncStatusChip state={syncState} />
+                  <SyncStatusChip state={syncStatus} />
                   <div className="inline-flex items-center gap-1 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass)] px-3 py-1 text-xs text-[color:var(--warm-grey-light)]">
                     <Eye className="size-3.5 text-[color:var(--accent-teal)]" />
-                    Auto-save planned
+                    Auto-save active
                   </div>
                 </div>
               </div>
@@ -647,6 +784,24 @@ export function NoteEditorDialog({
                     Split
                   </Button>
                 </div>
+
+                <div className="inline-flex items-center gap-1 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass)] p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAdvancedEditor(!advancedEditor)}
+                    className={cn(
+                      "text-[color:var(--warm-grey-light)] hover:text-[color:var(--platinum)]",
+                      advancedEditor &&
+                        "border border-[color:var(--glass-border)] bg-[color:var(--black-tertiary)] text-[color:var(--accent-teal)]"
+                    )}
+                    title={advancedEditor ? "Switch to Basic Editor" : "Switch to Advanced Editor (Monaco)"}
+                  >
+                    <Code2 className="size-4" />
+                    <span className="ml-1 hidden sm:inline">{advancedEditor ? "Rich" : "Basic"}</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -661,14 +816,27 @@ export function NoteEditorDialog({
                   <label htmlFor="note-content" className="sr-only">
                     Markdown content
                   </label>
-                  <Textarea
-                    id="note-content"
-                    ref={textareaRef}
-                    placeholder="Write in Markdown. Use the toolbar to format quickly."
-                    value={content}
-                    onChange={(event) => setContent(event.target.value)}
-                    className="min-h-[26rem] resize-none border-[color:var(--glass-border)] bg-[color:var(--black-primary)]/80 px-5 py-4 font-[450] leading-7 text-[color:var(--platinum)] placeholder:text-[color:var(--warm-grey)] focus-visible:border-[color:var(--accent-teal-dim)] focus-visible:ring-[color:var(--accent-teal-dim)]/30"
-                  />
+                  {advancedEditor ? (
+                    <div className="h-[26rem] rounded-md border border-[color:var(--glass-border)] overflow-hidden">
+                      <MonacoEditor
+                        value={content}
+                        onChange={(val) => setContent(val || "")}
+                        language="markdown"
+                        onMount={(editor) => {
+                          monacoRef.current = editor;
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <Textarea
+                      id="note-content"
+                      ref={textareaRef}
+                      placeholder="Write in Markdown. Use the toolbar to format quickly."
+                      value={content}
+                      onChange={(event) => setContent(event.target.value)}
+                      className="min-h-[26rem] resize-none border-[color:var(--glass-border)] bg-[color:var(--black-primary)]/80 px-5 py-4 font-[450] leading-7 text-[color:var(--platinum)] placeholder:text-[color:var(--warm-grey)] focus-visible:border-[color:var(--accent-teal-dim)] focus-visible:ring-[color:var(--accent-teal-dim)]/30"
+                    />
+                  )}
                 </div>
               )}
 

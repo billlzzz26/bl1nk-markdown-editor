@@ -38,6 +38,8 @@
   "exclude": [
     "node_modules",
     "convex",
+    "CTranslate2",
+    "**/build",
     "**/*.test.ts",
     "**/*.test.tsx",
     "src/setup-test.ts",

@@ -14,22 +14,19 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { NotesList, type Note } from "@/components/ui/note-editor";
 import { NoteEditorInline } from "@/components/ui/note-editor-inline";
-import { NoteToolRenderers } from "./components/note-tool-renderers";
 import { ThreePanelLayout } from "./components/three-panel-layout";
-import { chat, type Message, type ToolCallResult } from "./components/agents/note-taker";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Message, MessageContent, MessageActions, MessageAction } from "@/components/ai-elements/message";
+import { ToolCall } from "@/components/tool-call";
+import { generateId, type UIMessage } from "ai";
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
-  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string; toolCalls?: ToolCallResult[] }>>([]);
+  const [messages, setMessages] = useState<UIMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    fetchNotes();
-  }, []);
 
   const fetchNotes = async () => {
     try {
@@ -46,6 +43,10 @@ export default function Home() {
       console.error("Failed to fetch notes:", error);
     }
   };
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
 
   const handleSaveNote = async (data: Partial<Note>) => {
     const action = data._id ? "updateNote" : "saveNote";
@@ -68,7 +69,7 @@ export default function Home() {
       const response = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "deleteNote", args: { _id: id } }),
+        body: JSON.stringify({ action: "deleteNote", args: { id } }),
       });
       if (response.ok) {
         await fetchNotes();
@@ -83,28 +84,50 @@ export default function Home() {
     const userMessage = (rawMessage ?? input).trim();
     if (!userMessage || isLoading) return;
 
-    setInput("");
+    setInput('');
     setIsLoading(true);
-    const newUserMessage = { role: "user" as const, content: userMessage };
-    setMessages((prev) => [...prev, newUserMessage]);
+
+    // Add user message
+    const userMsg: UIMessage = { 
+      id: generateId(), 
+      role: 'user', 
+      parts: [{ type: 'text', text: userMessage }]
+    };
+    setMessages((prev) => [...prev, userMsg]);
 
     try {
-      const conversationHistory: Message[] = messages
-        .filter((m) => m.role === "user" || m.role === "assistant")
-        .map((m) => ({ role: m.role, content: m.content }));
-      conversationHistory.push({ role: "user", content: userMessage });
+      // Prepare all messages in UIMessage format
+      const allMessages: UIMessage[] = [...messages, userMsg];
 
-      const response = await chat(conversationHistory, () => {});
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: response.content, toolCalls: response.toolCalls },
-      ]);
-      if (response.toolCalls?.length) fetchNotes();
+      // Call agent API
+      const response = await fetch('/api/agent/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: allMessages }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Agent request failed');
+      }
+
+      const data = await response.json();
+      const assistantMsg: UIMessage = data.message;
+
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      // Refresh notes if any tool calls were made
+      if (assistantMsg.parts.some(p => p.type.startsWith('tool-'))) {
+        fetchNotes();
+      }
     } catch (error) {
-      console.error("Chat error:", error);
+      console.error('Chat error:', error);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Sorry, I encountered an error." },
+        { 
+          id: generateId(),
+          role: 'assistant', 
+          parts: [{ type: 'text', text: 'Sorry, I encountered an error.' }]
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -116,6 +139,13 @@ export default function Home() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const getMessageText = (message: UIMessage) => {
+    return message.parts
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => (part as { text: string }).text)
+      .join("\n");
   };
 
   // Left panel: Notes list
@@ -170,20 +200,51 @@ export default function Home() {
             </ConversationEmptyState>
           ) : (
             messages.map((message, index) => (
-              <div className="max-w-none mb-3" key={index}>
-                <div
-                  className={
-                    message.role === "user"
-                      ? "ml-auto max-w-[85%] rounded-2xl border border-[color:var(--accent-teal)]/20 bg-[color:var(--accent-teal)]/10 px-3 py-2 text-white text-sm"
-                      : "w-full rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 text-neutral-100 text-sm"
-                  }
-                >
-                  <p className="whitespace-pre-wrap leading-6">{message.content}</p>
-                  {message.toolCalls?.length ? (
-                    <NoteToolRenderers toolCalls={message.toolCalls} />
-                  ) : null}
-                </div>
-              </div>
+              <Message key={message.id || index} from={message.role}>
+                <MessageContent>
+                  {message.parts.map((part: any, partIdx) => {
+                    if (part.type.startsWith("tool-")) {
+                      const toolPart = part as any;
+                      const toolName = toolPart.toolName || part.type.replace("tool-", "");
+                      return (
+                        <ToolCall
+                          key={`${message.id || index}-${partIdx}`}
+                          part={{
+                            type: part.type as any,
+                            toolName: toolName,
+                            input: toolPart.input || toolPart.args || {},
+                            ...(toolPart.output
+                              ? { result: toolPart.output as Record<string, unknown> }
+                              : {}),
+                          }}
+                          state={{
+                            running: toolPart.state === "call" || toolPart.state === "partial-call" || toolPart.state === "input-streaming",
+                            approvalRequested: toolPart.state === "approval-requested",
+                            denied: toolPart.state === "denied" || toolPart.state === "error",
+                            error: toolPart.state === "error",
+                            interrupted: false,
+                          }}
+                        />
+                      );
+                    }
+                    if (part.type === "text") {
+                      return <div key={partIdx}>{(part as { text: string }).text}</div>;
+                    }
+                    return null;
+                  })}
+                </MessageContent>
+                {message.role === "assistant" && (
+                  <MessageActions>
+                    <MessageAction
+                      tooltip="Copy"
+                      label="Copy"
+                      onClick={() => navigator.clipboard.writeText(getMessageText(message))}
+                    >
+                      Copy
+                    </MessageAction>
+                  </MessageActions>
+                )}
+              </Message>
             ))
           )}
           {isLoading && (
