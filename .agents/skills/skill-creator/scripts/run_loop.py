@@ -398,10 +398,12 @@ def main():
     # Determine output directory (create before run_loop so logs can be written)
     if args.results_dir:
         timestamp = time.strftime("%Y-%m-%d_%H%M%S")
-        results_dir = Path(args.results_dir).resolve() / timestamp
-        # Validate the resolved path stays within the user-specified directory
         base_dir = Path(args.results_dir).resolve()
-        if not str(results_dir).startswith(str(base_dir)):
+        results_dir = (base_dir / timestamp).resolve()
+        # Validate the resolved path stays within the user-specified directory
+        try:
+            results_dir.relative_to(base_dir)
+        except ValueError:
             print(f"Error: results-dir path traversal detected", file=sys.stderr)
             sys.exit(1)
         results_dir.mkdir(parents=True, exist_ok=True)
