@@ -131,8 +131,16 @@ def main():
             )
             sys.exit(1)
 
-        # Base command from allowlist, plus any extra user-supplied arguments
-        command = ALLOWED_COMMANDS[command_key] + raw_args[1:]
+        # Only execute the predefined allowlisted command; do not pass through
+        # arbitrary user-supplied arguments.
+        if len(raw_args) > 1:
+            print(
+                f"Error: Extra arguments are not allowed for '{command_key}'",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        command = ALLOWED_COMMANDS[command_key]
         print(f"Running: {' '.join(command)}\n")
         result = subprocess.run(command, shell=False)
         sys.exit(result.returncode)
