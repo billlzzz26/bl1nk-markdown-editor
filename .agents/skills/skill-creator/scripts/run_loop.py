@@ -398,13 +398,22 @@ def main():
     # Determine output directory (create before run_loop so logs can be written)
     if args.results_dir:
         timestamp = time.strftime("%Y-%m-%d_%H%M%S")
-        base_dir = Path(args.results_dir).resolve()
-        results_dir = (base_dir / timestamp).resolve()
-        # Validate the resolved path stays within the user-specified directory
+        safe_root = (Path(tempfile.gettempdir()).resolve() / "skill_creator_results").resolve()
+        user_dir = Path(args.results_dir)
+        if user_dir.is_absolute():
+            print("Error: --results-dir must be a relative path", file=sys.stderr)
+            sys.exit(1)
+        base_dir = (safe_root / user_dir).resolve()
         try:
-            results_dir.relative_to(base_dir)
+            base_dir.relative_to(safe_root)
         except ValueError:
-            print(f"Error: results-dir path traversal detected", file=sys.stderr)
+            print("Error: results-dir path traversal detected", file=sys.stderr)
+            sys.exit(1)
+        results_dir = (base_dir / timestamp).resolve()
+        try:
+            results_dir.relative_to(safe_root)
+        except ValueError:
+            print("Error: results-dir path traversal detected", file=sys.stderr)
             sys.exit(1)
         results_dir.mkdir(parents=True, exist_ok=True)
     else:
