@@ -399,10 +399,22 @@ def main():
     if args.results_dir:
         timestamp = time.strftime("%Y-%m-%d_%H%M%S")
         safe_root = (Path(tempfile.gettempdir()).resolve() / "skill_creator_results").resolve()
-        user_dir = Path(args.results_dir)
-        if user_dir.is_absolute():
+
+        raw_user_dir = Path(args.results_dir)
+        if raw_user_dir.is_absolute():
             print("Error: --results-dir must be a relative path", file=sys.stderr)
             sys.exit(1)
+
+        # Sanitize user-provided path segments to prevent traversal and special anchors.
+        invalid_parts = {"", ".", "..", "~"}
+        clean_parts = []
+        for part in raw_user_dir.parts:
+            if part in invalid_parts:
+                print("Error: invalid --results-dir path segment", file=sys.stderr)
+                sys.exit(1)
+            clean_parts.append(part)
+
+        user_dir = Path(*clean_parts) if clean_parts else Path("results")
         base_dir = (safe_root / user_dir).resolve()
         try:
             base_dir.relative_to(safe_root)
