@@ -398,7 +398,7 @@ def main():
     # Determine output directory (create before run_loop so logs can be written)
     if args.results_dir:
         timestamp = time.strftime("%Y-%m-%d_%H%M%S")
-        safe_root = (Path(tempfile.gettempdir()).resolve() / "skill_creator_results").resolve()
+        safe_root = Path(tempfile.gettempdir()).resolve() / "skill_creator_results"
 
         raw_user_dir = Path(args.results_dir)
         if raw_user_dir.is_absolute():
