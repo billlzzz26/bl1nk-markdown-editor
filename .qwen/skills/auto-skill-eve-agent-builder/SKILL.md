@@ -213,3 +213,87 @@ Additionally, `npx tsc --noEmit` fails on Android ARM64 because the TypeScript n
 | Tool not discovered | Wrong directory (`tools/` not `tool/`) or not a default export | Check path and export syntax |
 | Connection `principal_required` | User-scoped `connect()` without authenticated session | Use `principalType: "app"` or add route auth |
 | TypeScript `tsc` not found on Android | No ARM64 binary for TypeScript | Use `npx eve info` for validation instead |
+
+## Appendix: App-to-eve connection pattern
+
+When a Next.js app needs to call the eve agent (e.g., a chat UI that sends messages to the agent), create an API proxy route in the app that forwards requests to the eve agent's HTTP API.
+
+### Architecture
+
+```
+browser (page.tsx) → /api/agent/notes (Next.js API route) → EVE_AGENT_URL (eve agent HTTP API)
+```
+
+### Setup
+
+1. Set `EVE_AGENT_URL` env var (default: `http://127.0.0.1:2000`)
+2. Create an API route that proxies messages to the eve agent
+3. The page.tsx calls `/api/agent/notes` as before — no UI changes needed
+
+### API route pattern
+
+```ts
+// src/app/api/agent/notes/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { generateId, type UIMessage } from "ai";
+
+const EVE_AGENT_URL = process.env.EVE_AGENT_URL || "http://127.0.0.1:2000";
+
+// In-memory session store — maps thread/chat IDs to eve session tokens
+const sessions = new Map<string, { sessionId: string; continuationToken: string }>();
+
+export async function POST(req: NextRequest) {
+  const { messages, threadId } = await req.json();
+
+  // Find last user message
+  const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user");
+  const userText = lastUserMsg.parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n");
+
+  // Resume or create session
+  const sessionKey = threadId || "default";
+  const existing = sessions.get(sessionKey);
+
+  const url = existing
+    ? `${EVE_AGENT_URL}/eve/v1/session/${existing.sessionId}`
+    : `${EVE_AGENT_URL}/eve/v1/session`;
+
+  const body = existing
+    ? { continuationToken: existing.continuationToken, message: userText }
+    : { message: userText };
+
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json();
+
+  // Store session for continuation
+  if (data.continuationToken) {
+    sessions.set(sessionKey, { sessionId: data.sessionId, continuationToken: data.continuationToken });
+  }
+
+  // Return as UIMessage for the frontend
+  return NextResponse.json({
+    message: { id: generateId(), role: "assistant", parts: [{ type: "text", text: data.text || "" }] },
+    sessionId: data.sessionId,
+  });
+}
+```
+
+### Migrating from app agent to eve agent
+
+When the app previously used its own agent (e.g., `ToolLoopAgent` from AI SDK):
+
+1. Create equivalent tools in `note-agent/agent/tools/` using `defineTool` from `eve/tools`
+2. Create the proxy API route (above) pointing at `EVE_AGENT_URL`
+3. Delete old agent code: `src/lib/agent/tools/`, `agent.ts`, `system-prompt.ts`, `models.ts`, etc.
+4. Move utility files (like `env.ts`) up to `src/lib/` if still used by other API routes
+5. Update all imports from `@/lib/agent/lib/env` to `@/lib/env`
+6. Verify: `grep -r "@/lib/agent" src/` returns nothing
+7. Keep the old `/api/agent/notes` route name — the frontend doesn't need changes
+
+The eve `defineTool` pattern and the AI SDK `tool()` pattern serve the same purpose but use different imports. They cannot be mixed in the same codebase — migrate all tools at once.
+
+### Session management considerations
+
+- **In-memory sessions** work for single-server dev but reset on restart. For production, persist session tokens in a database or use the Convex `threads` table.
+- **Timeout**: Set a timeout on fetch to the eve agent (e.g., 30s) so the API route doesn't hang if the agent is down.
+- **Fallback**: If session continuation fails (agent restarted, session expired), fall back to creating a new session with `callEveAgent(null, message)`.
+- **Thread mapping**: Map `threadId` (from Convex threads table) to eve session IDs for multi-turn conversations.
