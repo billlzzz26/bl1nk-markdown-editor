@@ -36,4 +36,16 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_updatedAt", ["updatedAt"]),
+
+  files: defineTable({
+    name: v.string(),
+    type: v.string(),
+    size: v.number(),
+    url: v.string(),
+    noteId: v.optional(v.id("notes")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_createdAt", ["createdAt"])
+    .index("by_noteId", ["noteId"])
+    .index("by_type", ["type"]),
 });

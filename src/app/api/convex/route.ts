@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CONVEX_URL } from "../../components/agents/lib/env";
+import { CONVEX_URL } from "@/lib/env";
 
 const CONVEX_ACTION_ENDPOINTS = {
   addMessageToThread: "/api/addMessageToThread",

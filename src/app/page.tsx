@@ -12,13 +12,14 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import { NotesList, type Note } from "@/components/ui/note-editor";
-import { NoteEditorInline } from "@/components/ui/note-editor-inline";
-import { ThreePanelLayout } from "./components/three-panel-layout";
-import { Plus } from "lucide-react";
+import { NotesList, type Note } from "@/components/editor/note-editor";
+import { NoteEditorInline } from "@/components/editor/note-editor-inline";
+import { ThreePanelLayout } from "@/components/notes/three-panel-layout";
+import { Plus, HardDrive } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageActions, MessageAction } from "@/components/ai-elements/message";
-import { ToolCall } from "@/components/tool-call";
+import { ToolCall } from "@/components/tool";
 import { generateId, type UIMessage } from "ai";
 
 export default function Home() {
@@ -153,14 +154,23 @@ export default function Home() {
     <div className="flex h-full flex-col bg-neutral-900">
       <div className="flex items-center justify-between border-b border-neutral-800 p-3">
         <h2 className="text-sm font-semibold text-white">Notes</h2>
-        <Button
-          size="sm"
-          onClick={() => setActiveNote(null)}
-          className="gap-1 bg-[color:var(--accent-teal)] text-black hover:bg-[color:var(--accent-teal-dim)]"
-        >
-          <Plus className="size-3.5" />
-          New
-        </Button>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/files"
+            className="flex size-8 items-center justify-center rounded-lg text-neutral-400 hover:text-accent-teal hover:bg-neutral-800 transition-colors"
+            aria-label="Files"
+          >
+            <HardDrive className="size-4" />
+          </Link>
+          <Button
+            size="sm"
+            onClick={() => setActiveNote(null)}
+            className="gap-1 bg-[color:var(--accent-teal)] text-black hover:bg-[color:var(--accent-teal-dim)]"
+          >
+            <Plus className="size-3.5" />
+            New
+          </Button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-2">
         <NotesList

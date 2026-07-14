@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CONVEX_URL } from "@/lib/env";
 
-const NOTE_ACTION_ENDPOINTS = {
-  deleteNote: "/api/deleteNote",
-  getNotesByTag: "/api/getNotesByTag",
-  listNotes: "/api/listNotes",
-  saveNote: "/api/saveNote",
-  searchNotes: "/api/searchNotes",
-  updateNote: "/api/updateNote",
+const FILE_ACTION_ENDPOINTS = {
+  listFiles: "/api/listFiles",
+  getFile: "/api/getFile",
+  getFilesByNote: "/api/getFilesByNote",
+  searchFiles: "/api/searchFiles",
+  saveFile: "/api/saveFile",
+  deleteFile: "/api/deleteFile",
 } as const;
 
-type NoteAction = keyof typeof NOTE_ACTION_ENDPOINTS;
+type FileAction = keyof typeof FILE_ACTION_ENDPOINTS;
 
-function isNoteAction(value: unknown): value is NoteAction {
-  return typeof value === "string" && value in NOTE_ACTION_ENDPOINTS;
+function isFileAction(value: unknown): value is FileAction {
+  return typeof value === "string" && value in FILE_ACTION_ENDPOINTS;
 }
 
 export async function POST(request: NextRequest) {
@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "CONVEX_URL not configured" }, { status: 500 });
     }
 
-    if (!isNoteAction(action)) {
-      return NextResponse.json({ error: "Unsupported note action" }, { status: 400 });
+    if (!isFileAction(action)) {
+      return NextResponse.json({ error: "Unsupported file action" }, { status: 400 });
     }
 
-    const targetUrl = new URL(NOTE_ACTION_ENDPOINTS[action], CONVEX_URL);
+    const targetUrl = new URL(FILE_ACTION_ENDPOINTS[action], CONVEX_URL);
 
     const response = await fetch(targetUrl, {
       method: "POST",
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("API route error:", error);
+    console.error("Files API route error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

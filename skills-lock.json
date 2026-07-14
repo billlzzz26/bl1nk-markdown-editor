@@ -26,6 +26,12 @@
       "sourceType": "github",
       "computedHash": "41c4653e8c48ac830995424e5305af98993a3ff81a17d5daa3f80f368cba9aed"
     },
+    "eve": {
+      "source": "vercel/eve",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "79a1e606ecf33eed33c1f3adc1cc266de391e19aa9237ca37e4f3aa3fba6b228"
+    },
     "github-fix-issue": {
       "source": "feiskyer/claude-code-settings",
       "sourceType": "github",
