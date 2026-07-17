@@ -3,4 +3,4 @@ git+https://github.com/facebookresearch/fairseq.git@main; sys_platform == 'linux
 OpenNMT-py==2.2.*;sys_platform=='linux' or sys_platform=='darwin'
 pytest
 wurlitzer==3.0.*;sys_platform=='linux'
-torch==2.6
+torch==2.13.0
