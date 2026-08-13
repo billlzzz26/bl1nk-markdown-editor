@@ -1,4 +1,32 @@
-# AGENTS.md
+# AGENTS.md - bl1nk-markdown-editor Project Map
+
+## 🎯 Vision (Director's Intent)
+สร้าง Markdown Editor ที่ใช้งานง่ายและสามารถรวมเข้ากับ App หรือ Web App ได้อย่างรวดเร็วและมีประสิทธิภาพ โดยเน้นความเป็น Agentic และความพึงพอใจของนักพัฒนา
+
+## 🏗️ Architecture Overview
+- **Framework**: Next.js 16 (App Router)
+- **Database/Backend**: Convex
+- **Editor**: Monaco Editor (Customized)
+- **AI Integration**: eve framework (found in `note-agent/`)
+- **UI Components**: Tailwind CSS v4 / shadcn/ui
+
+## 🚦 Current Status
+- **Phase**: Phase 2: Architecture Transformation (Monorepo & CodeMirror 6)
+- **Active Wave**: Wave 2
+- **Health**: 🟢 Healthy (Monorepo Initialized, SPEC.md Created)
+
+## 🛠️ Infrastructure
+- **Docs**: `docs/` (Architecture, Decisions)
+- **Tools**: `tools/` (To be developed)
+- **Memory**: `learnings.md`
+
+## 📝 Recent Learnings
+- **Monorepo Migration**: ย้ายโค้ดเดิมไปที่ `apps/web` และเตรียม `packages/editor` สำหรับ Editor ตัวใหม่
+- **Editor Pivot**: ตัดสินใจเปลี่ยนจาก Monaco เป็น CodeMirror 6 เพื่อความยืดหยุ่นในการทำ Plugin และน้ำหนักเบา
+- **AI Focus**: เน้นการทำ Autocomplete และ Custom Rules เป็นลำดับแรกในด้าน AI
+- **Infrastructure**: ใช้ `pnpm workspaces` ในการจัดการระบบ Monorepo
+
+---
 
 ## Project Overview
 
