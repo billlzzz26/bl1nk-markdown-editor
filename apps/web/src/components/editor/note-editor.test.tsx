@@ -9,6 +9,11 @@ describe('NoteEditorDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders create mode when no note is provided', () => {
@@ -54,6 +59,9 @@ describe('NoteEditorDialog', () => {
     
     const saveButton = screen.getByRole('button', { name: /create/i });
     fireEvent.click(saveButton);
+
+    // Advance timers to trigger debounced autosave if any, or just wait for the click handler
+    vi.runAllTimers();
 
     await waitFor(() => {
       expect(mockOnSave).toHaveBeenCalledWith({
@@ -135,6 +143,11 @@ describe('NotesList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders empty state when no notes', () => {
