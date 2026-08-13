@@ -2,14 +2,13 @@
 
 import React, { useRef } from "react";
 import Editor, { OnMount, BeforeMount, Monaco } from "@monaco-editor/react";
-import { editor } from "monaco-editor";
 
 interface MonacoEditorProps {
   value: string;
   onChange: (value: string | undefined) => void;
   language?: string;
   readOnly?: boolean;
-  onMount?: (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => void;
+  onMount?: (editor: any, monaco: Monaco) => void;
 }
 
 export function MonacoEditor({
@@ -19,7 +18,7 @@ export function MonacoEditor({
   readOnly = false,
   onMount
 }: MonacoEditorProps) {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<any>(null);
 
   const handleEditorWillMount: BeforeMount = (monaco: Monaco) => {
     monaco.editor.defineTheme("mocona-dark", {
@@ -42,7 +41,7 @@ export function MonacoEditor({
     });
   };
 
-  const handleEditorDidMount: OnMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
+  const handleEditorDidMount: OnMount = (editor: any, monaco: Monaco) => {
     editorRef.current = editor;
     if (onMount) {
       onMount(editor, monaco);
@@ -75,7 +74,7 @@ export function MonacoEditor({
           folding: true,
           lineDecorationsWidth: 16,
           lineNumbersMinChars: 3,
-          hover: { enabled: true }
+          hover: { enabled: true } as any
         }}
       />
     </div>

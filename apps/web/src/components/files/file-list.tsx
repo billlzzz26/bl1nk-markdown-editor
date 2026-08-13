@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Filter } from "lucide-react";
 import { FileCard, type AppFile } from "./file-card";
+export type { AppFile };
 import { cn } from "@/lib/utils";
 
 const FILE_TYPES = ["all", "image", "pdf", "text", "other"] as const;
