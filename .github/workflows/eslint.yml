@@ -42,7 +42,8 @@ jobs:
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
-          bun run lint --format @microsoft/eslint-formatter-sarif --output-file eslint-results.sarif
+          cd apps/web
+          bun run lint --format @microsoft/eslint-formatter-sarif --output-file ../../eslint-results.sarif
         continue-on-error: true
 
       - name: Upload analysis results to GitHub

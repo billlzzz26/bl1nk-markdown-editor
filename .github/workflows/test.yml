@@ -26,4 +26,6 @@ jobs:
         run: bun install
 
       - name: Run tests
-        run: bun run test:run
+        run: |
+          cd apps/web
+          bun run test:run
