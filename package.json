@@ -6,12 +6,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --filter @bl1nk/web dev",
-    "build": "pnpm --filter @bl1nk/web build",
-    "lint": "pnpm --filter @bl1nk/web lint",
-    "typecheck": "pnpm --filter @bl1nk/web typecheck",
-    "test": "pnpm --filter @bl1nk/web test",
-    "test:run": "pnpm --filter @bl1nk/web test:run"
+    "dev": "bun run --filter @bl1nk/web dev",
+    "build": "bun run --filter @bl1nk/web build",
+    "lint": "bun run --filter @bl1nk/web lint",
+    "typecheck": "bun run --filter @bl1nk/web typecheck",
+    "test": "bun run --filter @bl1nk/web test",
+    "test:run": "bun run --filter @bl1nk/web test:run"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
