@@ -6,7 +6,7 @@
 ## 🏗️ Architecture Overview
 - **Framework**: Next.js 16 (App Router)
 - **Database/Backend**: Convex
-- **Editor**: Monaco Editor (Customized)
+- **Editor**: CodeMirror 6 (replacing Monaco)
 - **AI Integration**: eve framework (found in `note-agent/`)
 - **UI Components**: Tailwind CSS v4 / shadcn/ui
 
