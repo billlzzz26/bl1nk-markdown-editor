@@ -18,8 +18,8 @@
 - **Communication Fix**: พบว่าโปรเจกต์มี `AGENTS.md` อยู่แล้วในบางจุด การเขียนทับต้องระวังข้อมูลเดิม จึงเปลี่ยนมาใช้การ `edit` เพื่อ Merge ข้อมูลแทน
 - **Technical Insight**: โปรเจกต์ใช้ `streamdown` และ `shiki` สำหรับการจัดการ Markdown ซึ่งเป็น Library ที่ทันสมัยและรองรับ Streaming ได้ดี
 
-### Infrastructure Created
-- `AGENTS.md`: แผนที่นำทางใหม่ที่รวมวิสัยทัศน์ของ Director
+### Infrastructure Updated/Merged
+- `AGENTS.md`: อัปเดตแผนที่นำทางเดิมให้ครอบคลุมวิสัยทัศน์ของ Director และโครงสร้างใหม่
 - `learnings.md`: หน่วยความจำของเอเจนต์
 - `docs/decision_matrix.md`: ข้อมูลสำหรับประกอบการตัดสินใจของ Director
 

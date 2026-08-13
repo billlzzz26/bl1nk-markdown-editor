@@ -24,7 +24,7 @@
 - **Monorepo Migration**: ย้ายโค้ดเดิมไปที่ `apps/web` และเตรียม `packages/editor` สำหรับ Editor ตัวใหม่
 - **Editor Pivot**: ตัดสินใจเปลี่ยนจาก Monaco เป็น CodeMirror 6 เพื่อความยืดหยุ่นในการทำ Plugin และน้ำหนักเบา
 - **AI Focus**: เน้นการทำ Autocomplete และ Custom Rules เป็นลำดับแรกในด้าน AI
-- **Infrastructure**: ใช้ `pnpm workspaces` ในการจัดการระบบ Monorepo
+- **Infrastructure**: ใช้ `pnpm workspaces` ในการกำหนดโครงสร้าง Monorepo แต่ใช้ `bun` เป็นเครื่องมือหลักในการรันคำสั่ง (install, build, test) เพื่อประสิทธิภาพสูงสุด
 
 ---
 
@@ -214,7 +214,7 @@ Setup file: `src/setup-test.ts` (auto-cleanup after each test).
 
 ## Constraints
 
-- **Package manager**: `bun` only — never use `npm` or `yarn`
+- **Package manager**: `bun` only — never use `npm` or `yarn` (Note: `pnpm` is used only for workspace definition in `pnpm-workspace.yaml`, but all execution must be via `bun`)
 - **No `next dev`**: sandbox handles dev server
 - **Commit workflow**: `bun typecheck && bun lint && git add -A && git commit -m "message" && git push`
 - **Windows note**: some Turbopack/shiki features may have junction issues — avoid unstable paths like `shiki/streamdown`

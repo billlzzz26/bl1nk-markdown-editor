@@ -6,7 +6,8 @@
 ## 🏗️ Core Architecture
 - **Engine**: CodeMirror 6
 - **Language**: TypeScript
-- **Framework Support**: React (via `@codemirror/lang-markdown` and `@uiw/react-codemirror` or custom wrapper)
+- **Framework Support**: React (via `@uiw/react-codemirror` or custom wrapper)
+- **Language Engine**: Markdown (via `@codemirror/lang-markdown` extension inside the core)
 
 ## 🛠️ Feature Requirements (Wave 2)
 1. **Markdown Support**: CommonMark + GFM extensions.
