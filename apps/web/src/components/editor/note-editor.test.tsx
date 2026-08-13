@@ -9,11 +9,7 @@ describe('NoteEditorDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
+    localStorage.clear();
   });
 
   it('renders create mode when no note is provided', () => {
@@ -47,8 +43,9 @@ describe('NoteEditorDialog', () => {
   });
 
   it('calls onSave with correct data when creating note', async () => {
+    const localMockOnSave = vi.fn();
     render(
-      <NoteEditorDialog onSave={mockOnSave} isOpen={true} onOpenChange={mockOnOpenChange} />
+      <NoteEditorDialog onSave={localMockOnSave} isOpen={true} onOpenChange={mockOnOpenChange} />
     );
 
     const titleInput = screen.getByPlaceholderText('Untitled note');
@@ -60,11 +57,8 @@ describe('NoteEditorDialog', () => {
     const saveButton = screen.getByRole('button', { name: /create/i });
     fireEvent.click(saveButton);
 
-    // Advance timers to trigger debounced autosave if any, or just wait for the click handler
-    vi.runAllTimers();
-
     await waitFor(() => {
-      expect(mockOnSave).toHaveBeenCalledWith({
+      expect(localMockOnSave).toHaveBeenCalledWith({
         title: 'New Note Title',
         content: 'New Note Content',
         tags: [],
@@ -74,14 +68,15 @@ describe('NoteEditorDialog', () => {
   });
 
   it('prevents saving when title is empty', () => {
+    const localMockOnSave = vi.fn();
     render(
-      <NoteEditorDialog onSave={mockOnSave} isOpen={true} onOpenChange={mockOnOpenChange} />
+      <NoteEditorDialog onSave={localMockOnSave} isOpen={true} onOpenChange={mockOnOpenChange} />
     );
 
     const saveButton = screen.getByRole('button', { name: /create/i });
     fireEvent.click(saveButton);
 
-    expect(mockOnSave).not.toHaveBeenCalled();
+    expect(localMockOnSave).not.toHaveBeenCalled();
   });
 
   it('can add tags', async () => {
@@ -143,11 +138,7 @@ describe('NotesList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
+    localStorage.clear();
   });
 
   it('renders empty state when no notes', () => {
