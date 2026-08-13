@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NoteEditorDialog, NotesList, type Note } from "@/components/ui/note-editor";
+import { NoteEditorDialog, NotesList, type Note } from "@/components/editor/note-editor";
 import { X } from "lucide-react";
 
 interface NotesPanelProps {
@@ -79,7 +79,7 @@ export function NotesPanel({ notes, onSave, onDelete, onClose, isMobileOverlay }
         onSave={handleSave}
         onDelete={handleDelete}
         isOpen={dialogOpen}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           setDialogOpen(open);
           if (!open) setEditingNote(undefined);
         }}

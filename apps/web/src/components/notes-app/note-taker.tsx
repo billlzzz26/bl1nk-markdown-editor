@@ -5,7 +5,7 @@ import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Message, MessageContent, MessageActions, MessageAction } from "@/components/ai-elements/message";
-import { ToolCall } from "@/components/tool-call";
+import { ToolCall } from "@/components/tool/tool-call";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useChat } from "@ai-sdk/react";
 
@@ -14,7 +14,7 @@ import { useChat } from "@ai-sdk/react";
  */
 function getToolRenderState(
   part: any
-): import("@/components/tool-call/tool-layout").ToolRenderState {
+): import("@/components/tool/tool-layout").ToolRenderState {
   const state = part.state as string | undefined;
 
   return {

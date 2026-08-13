@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     const existingId = existingSession?.sessionId;
 
     // Call eve agent
-    const result = await callEveAgent(existingId, userText);
+    const result = await callEveAgent(existingId || null, userText);
 
     // Store session data for continuation
     if (result.continuationToken) {

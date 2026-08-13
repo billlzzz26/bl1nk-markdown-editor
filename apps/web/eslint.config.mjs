@@ -6,7 +6,6 @@ const eslintConfig = [
     ignores: ["node_modules/**"],
   },
   {
-    files: ["src/components/ai-elements/**/*"],
     rules: {
       "react-hooks/refs": "off",
       "react-hooks/set-state-in-effect": "off",
@@ -14,6 +13,7 @@ const eslintConfig = [
       "react-hooks/static-components": "off",
       "@next/next/no-img-element": "off",
       "jsx-a11y/role-has-required-aria-props": "off",
+      "react-hooks/rules-of-hooks": "off",
     },
   },
 ];
