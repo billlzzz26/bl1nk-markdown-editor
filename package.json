@@ -1,12 +1,17 @@
 {
   "name": "bl1nk-monorepo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "pnpm --filter @bl1nk/web dev",
     "build": "pnpm --filter @bl1nk/web build",
     "lint": "pnpm --filter @bl1nk/web lint",
     "typecheck": "pnpm --filter @bl1nk/web typecheck",
-    "test": "pnpm --filter @bl1nk/web test"
+    "test": "pnpm --filter @bl1nk/web test",
+    "test:run": "pnpm --filter @bl1nk/web test:run"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
