@@ -23,11 +23,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: |
-          cd apps/web
-          bun install
+        run: bun install
 
       - name: Run tests
-        run: |
-          cd apps/web
-          bun run test:run
+        run: bun run test:run
